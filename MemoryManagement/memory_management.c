@@ -13,11 +13,7 @@
 
 #define BUF_FFD_SIZE (sizeof(ffdSharedData))
 #define BUF_MODELICA_SIZE (sizeof(ModelicaSharedData))
-//#define BUF_MODELICA_SIZE 2560
 #define BUF_COMMAND_SIZE (N_COMMAND*sizeof(INT))
-
-//TCHAR szName[]=TEXT("Global\\MyFileMappingObject");
-TCHAR szName[]=TEXT("MyFileMappingObject");
 
 TCHAR ffdDataName[] = TEXT("FFDDataMappingObject");
 TCHAR modelicaDataName[] = TEXT("ModelicaDataMappingObject");
@@ -53,14 +49,23 @@ int main( )
   ffdSharedData ffdData;
   ModelicaSharedData modelicaData;
 
-  /////////////////////////////////////////////////////////////////////////////
-  // Fixme: Feak Data for Debug
-  modelicaData.arr[0] = 0;
-  modelicaData.arr[1] = 1;
-  modelicaData.arr[2] = 2;
-  modelicaData.number = 3.14159;
-  modelicaData.command = 10;
-  strcpy(modelicaData.message, "This is Modelica data\0");
+  /*---------------------------------------------------------------------------
+ | Initialize the memory
+  ---------------------------------------------------------------------------*/
+  modelicaData.arr[0] = -1;
+  modelicaData.arr[1] = -1;
+  modelicaData.arr[2] = -2;
+  modelicaData.number = -1;
+  modelicaData.command = -1;
+  strcpy(modelicaData.message, "This is feak Modelica data\0");
+
+  //
+  ffdData.number[0] = -1;
+  ffdData.number[1] = -1;
+  ffdData.number[2] = -2;
+  ffdData.command = -1;
+  strcpy(ffdData.message, "This is feak FFD data\0");
+
 
   /*---------------------------------------------------------------------------
   | Create named file mapping objects for specified files
@@ -94,7 +99,6 @@ int main( )
     return 1;
   }
 
-  // Fixme: The folowing are testing only
   /*---------------------------------------------------------------------------
   | Mps a view of a file mapping into the address space of a calling process
   ---------------------------------------------------------------------------*/
@@ -125,28 +129,26 @@ int main( )
     return 1;
   }
 
+  // Initialize the memory
   CopyMemory((PVOID)modelicaDataBuf, &modelicaData, sizeof(modelicaData));
-  printf("Copied Modelica data to buf\n");
-  printf("Modelica data\n");
-  printf("number=%f\n", modelicaData.number);
-  printf("arr[0]=%f, arr[1]=%f, arr[2]=%f\n", modelicaData.arr[0], modelicaData.arr[1], modelicaData.arr[2]);
-  printf("command=%d\n",modelicaData.command);
-  printf("message=%s\n",modelicaData.message); 
+  //printf("Copied Modelica data to buf\n");
+  //printf("Modelica data\n");
+  //printf("number=%f\n", modelicaData.number);
+  //printf("arr[0]=%f, arr[1]=%f, arr[2]=%f\n", modelicaData.arr[0], modelicaData.arr[1], modelicaData.arr[2]);
+  //printf("command=%d\n",modelicaData.command);
+  //printf("message=%s\n",modelicaData.message); 
 
-  printf("\nbuffed data:\n");
-  printf("number=%f\n", modelicaDataBuf->number);
-  printf("arr[0]=%f, arr[1]=%f, arr[2]=%f\n", modelicaDataBuf->arr[0], modelicaDataBuf->arr[1], modelicaDataBuf->arr[2]);
-  printf("command=%d\n",modelicaDataBuf->command);
-  printf("message=%s\n",modelicaDataBuf->message); 
+  //printf("\nbuffed data:\n");
+  //printf("number=%f\n", modelicaDataBuf->number);
+  //printf("arr[0]=%f, arr[1]=%f, arr[2]=%f\n", modelicaDataBuf->arr[0], modelicaDataBuf->arr[1], modelicaDataBuf->arr[2]);
+  //printf("command=%d\n",modelicaDataBuf->command);
+  //printf("message=%s\n",modelicaDataBuf->message); 
 
-  getchar();
+  printf("Created memory for data\n");
+  // Initialize the memory
   // Copy a block of memory from szMsg to pBuf
-  CopyMemory(&ffdData, (PVOID)ffdDataBuf, sizeof(ffdSharedData));
+  CopyMemory((PVOID)ffdDataBuf, &ffdData, sizeof(ffdSharedData));
 
-  printf("ffdData:\n");
-  printf("number[0]=%f, number[1]=%f, number[2]=%f\n", ffdData.number[0], ffdData.number[1], ffdData.number[2]);
-  printf("command=%d\n", ffdData.command);
-  printf("message=%s\n", ffdData.message);
 
   getchar();
   UnmapViewOfFile(ffdDataBuf);
