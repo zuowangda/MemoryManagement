@@ -13,6 +13,7 @@
 
 #define BUF_FFD_SIZE (sizeof(ffdSharedData))
 #define BUF_MODELICA_SIZE (sizeof(ModelicaSharedData))
+//#define BUF_MODELICA_SIZE 2560
 #define BUF_COMMAND_SIZE (N_COMMAND*sizeof(INT))
 
 //TCHAR szName[]=TEXT("Global\\MyFileMappingObject");
@@ -32,7 +33,7 @@ typedef struct {
   float number;
   int command;
   float arr[3];
-  char message[20];
+  char message[30];
 }ModelicaSharedData;
 
 
@@ -46,7 +47,8 @@ int main( )
   HANDLE modelicaDataMapFile;
   HANDLE commandDataMapFile;
   LPCTSTR ffdDataBuf;
-  LPCTSTR modelicaDataBuf;
+  //LPCTSTR modelicaDataBuf;
+  ModelicaSharedData *modelicaDataBuf;
 
   ffdSharedData ffdData;
   ModelicaSharedData modelicaData;
@@ -101,7 +103,7 @@ int main( )
                       0,
                       0,
                       BUF_FFD_SIZE);
-  modelicaDataBuf = (LPTSTR) MapViewOfFile(ffdDataMapFile,   // handle to map object
+  modelicaDataBuf = (ModelicaSharedData *) MapViewOfFile(modelicaDataMapFile,   // handle to map object
                       FILE_MAP_ALL_ACCESS, // read/write permission
                       0,
                       0,
@@ -123,11 +125,23 @@ int main( )
     return 1;
   }
 
+  CopyMemory((PVOID)modelicaDataBuf, &modelicaData, sizeof(modelicaData));
+  printf("Copied Modelica data to buf\n");
+  printf("Modelica data\n");
+  printf("number=%f\n", modelicaData.number);
+  printf("arr[0]=%f, arr[1]=%f, arr[2]=%f\n", modelicaData.arr[0], modelicaData.arr[1], modelicaData.arr[2]);
+  printf("command=%d\n",modelicaData.command);
+  printf("message=%s\n",modelicaData.message); 
+
+  printf("\nbuffed data:\n");
+  printf("number=%f\n", modelicaDataBuf->number);
+  printf("arr[0]=%f, arr[1]=%f, arr[2]=%f\n", modelicaDataBuf->arr[0], modelicaDataBuf->arr[1], modelicaDataBuf->arr[2]);
+  printf("command=%d\n",modelicaDataBuf->command);
+  printf("message=%s\n",modelicaDataBuf->message); 
+
   getchar();
   // Copy a block of memory from szMsg to pBuf
   CopyMemory(&ffdData, (PVOID)ffdDataBuf, sizeof(ffdSharedData));
-  CopyMemory((PVOID)modelicaDataBuf, &modelicaData, sizeof(modelicaData));
-
 
   printf("ffdData:\n");
   printf("number[0]=%f, number[1]=%f, number[2]=%f\n", ffdData.number[0], ffdData.number[1], ffdData.number[2]);
