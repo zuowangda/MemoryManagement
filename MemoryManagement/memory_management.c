@@ -1,3 +1,7 @@
+///////////////////////////////////////////////////////////////////////////////
+
+
+///////////////////////////////////////////////////////////////////////////////
 #include <windows.h>
 #include <stdio.h>
 #include <conio.h>
@@ -5,20 +9,31 @@
 
 
 #define BUF_SIZE 256
-#define N_FFD 10
-#define N_MODELICA 10
 #define N_COMMAND 1
-#define BUF_FFD_SIZE (N_FFD*sizeof(double))
-#define BUF_MODELICA_SIZE ((N_Modelica+1)*sizeof(double))
-#define BUF_COMMAND_SIZE (N_COMMAND*sizeof(int))
+
+#define BUF_FFD_SIZE (sizeof(ffdSharedData))
+#define BUF_MODELICA_SIZE (sizeof(ModelicaSharedData))
+#define BUF_COMMAND_SIZE (N_COMMAND*sizeof(INT))
 
 //TCHAR szName[]=TEXT("Global\\MyFileMappingObject");
 TCHAR szName[]=TEXT("MyFileMappingObject");
-TCHAR szMsg[]=TEXT("Message from first process.");
 
 TCHAR ffdDataName[] = TEXT("FFDDataMappingObject");
 TCHAR modelicaDataName[] = TEXT("ModelicaDataMappingObject");
 TCHAR commandDataName[] = TEXT("commandMappingObject");
+
+typedef struct {
+  float number[3];
+  int command;
+  char message[20];
+}ffdSharedData;
+
+typedef struct {
+  float number;
+  int command;
+  float arr[3];
+  char message[20];
+}ModelicaSharedData;
 
 
 
@@ -27,31 +42,26 @@ TCHAR commandDataName[] = TEXT("commandMappingObject");
 ******************************************************************************/
 int main( )
 {
-  double ffdData[N_FFD];
-  double modelicaData[N_MODELICA];
-  int commandData[N_COMMAND];
-
-  HANDLE hMapFile;
-  LPCTSTR pBuf;
   HANDLE ffdDataMapFile;
-  LPCTSTR ffdDataBuf;
   HANDLE modelicaDataMapFile;
-  LPCTSTR modelicaDataBuf;
   HANDLE commandDataMapFile;
-  LPCTSTR commandDataBuf;
+  LPCTSTR ffdDataBuf;
+  LPCTSTR modelicaDataBuf;
 
-  int i;
-  for(i=0; i<10; i++)
-  {
-    ffdData[i] = (double)i;
-    printf("ffdData[%d] =%f\n", i, ffdData[i]);
-  }
+  ffdSharedData ffdData;
+  ModelicaSharedData modelicaData;
 
-  getchar();
+  /////////////////////////////////////////////////////////////////////////////
+  // Fixme: Feak Data for Debug
+  modelicaData.arr[0] = 0;
+  modelicaData.arr[1] = 1;
+  modelicaData.arr[2] = 2;
+  modelicaData.number = 3.14159;
+  modelicaData.command = 10;
+  strcpy(modelicaData.message, "This is Modelica data\0");
 
-  commandData[0] = 1;
   /*---------------------------------------------------------------------------
-  | Create a named file mapping object for a specified file
+  | Create named file mapping objects for specified files
   ---------------------------------------------------------------------------*/
   ffdDataMapFile = CreateFileMapping(
                 INVALID_HANDLE_VALUE,    // use paging file
@@ -60,28 +70,29 @@ int main( )
                 0,                       // maximum object size (high-order DWORD)
                 BUF_FFD_SIZE,                // maximum object size (low-order DWORD)
                 ffdDataName);                 // name of mapping object
-  commandDataMapFile = CreateFileMapping(
+  modelicaDataMapFile = CreateFileMapping(
                 INVALID_HANDLE_VALUE,    // use paging file
                 NULL,                    // default security
                 PAGE_READWRITE,          // read/write access
                 0,                       // maximum object size (high-order DWORD)
-                BUF_COMMAND_SIZE,                // maximum object size (low-order DWORD)
-                commandDataName);                 // name of mapping object
+                BUF_MODELICA_SIZE,                // maximum object size (low-order DWORD)
+                modelicaDataName);                 // name of mapping object
 
   // Send warning if can not create shared memory
   if(ffdDataMapFile==NULL)
   {
-    _tprintf(TEXT("Could not create file mapping object (%d).\n"),
+    printf("Could not create file mapping object (%d).\n", 
             GetLastError());
     return 1;
   }
-  if(commandDataMapFile==NULL)
+  if(modelicaDataMapFile==NULL)
   {
-    _tprintf(TEXT("Could not create file mapping object (%d).\n"),
+    printf("Could not create file mapping object (%d).\n", 
             GetLastError());
     return 1;
   }
 
+  // Fixme: The folowing are testing only
   /*---------------------------------------------------------------------------
   | Mps a view of a file mapping into the address space of a calling process
   ---------------------------------------------------------------------------*/
@@ -90,45 +101,44 @@ int main( )
                       0,
                       0,
                       BUF_FFD_SIZE);
-  commandDataBuf = (LPTSTR) MapViewOfFile(ffdDataMapFile,   // handle to map object
+  modelicaDataBuf = (LPTSTR) MapViewOfFile(ffdDataMapFile,   // handle to map object
                       FILE_MAP_ALL_ACCESS, // read/write permission
                       0,
                       0,
-                      BUF_COMMAND_SIZE);
+                      BUF_MODELICA_SIZE);
 
-  //modelicaDataBuf = (LPTSTR) MapViewOfFile(modelicaDataMapFile,   // handle to map object
-  //                    FILE_MAP_ALL_ACCESS, // read/write permission
-  //                    0,
-  //                    0,
-  //                    BUF_DATA_SIZE);
   if(ffdDataBuf == NULL)
   {
-    _tprintf(TEXT("Could not map view of file (%d).\n"),
+    printf("Could not map view of file (%d).\n",
             GetLastError());
-      CloseHandle(ffdDataMapFile);
+    CloseHandle(ffdDataMapFile);
     return 1;
   }
 
-  if(commandDataBuf == NULL) 
+  if(modelicaDataBuf == NULL) 
   {
-    _tprintf(TEXT("Could not map view of file (%d).\n"),
+    printf("Could not map view of file (%d).\n",
             GetLastError());
-      CloseHandle(commandDataMapFile);
+    CloseHandle(modelicaDataMapFile);
     return 1;
   }
 
+  getchar();
   // Copy a block of memory from szMsg to pBuf
-  CopyMemory((PVOID)ffdDataBuf, ffdData, (N_FFD * sizeof(double)));
-  CopyMemory((PVOID)commandDataBuf, commandData, (N_COMMAND * sizeof(int)));
+  CopyMemory(&ffdData, (PVOID)ffdDataBuf, sizeof(ffdSharedData));
+  CopyMemory((PVOID)modelicaDataBuf, &modelicaData, sizeof(modelicaData));
 
-  while(commandDataBuf[0] > 0){
-    Sleep(10);
-  }
 
+  printf("ffdData:\n");
+  printf("number[0]=%f, number[1]=%f, number[2]=%f\n", ffdData.number[0], ffdData.number[1], ffdData.number[2]);
+  printf("command=%d\n", ffdData.command);
+  printf("message=%s\n", ffdData.message);
+
+  getchar();
   UnmapViewOfFile(ffdDataBuf);
-  UnmapViewOfFile(commandDataBuf);
+  UnmapViewOfFile(modelicaDataBuf);
   CloseHandle(ffdDataMapFile);
-  CloseHandle(commandDataMapFile);
+  CloseHandle(modelicaDataMapFile);
 
   return 0;
 }
