@@ -20,18 +20,18 @@ TCHAR modelicaDataName[] = TEXT("ModelicaDataMappingObject");
 TCHAR commandDataName[] = TEXT("commandMappingObject");
 
 typedef struct {
+  float t;
+  int status;
   float number[3];
-  int command;
   char message[20];
 }ffdSharedData;
 
 typedef struct {
-  float number;
-  int command;
+  float t;
+  int status;
   float arr[3];
   char message[30];
 }ModelicaSharedData;
-
 
 
 /******************************************************************************
@@ -52,20 +52,21 @@ int main( )
   /*---------------------------------------------------------------------------
  | Initialize the memory
   ---------------------------------------------------------------------------*/
+  modelicaData.t = 0;
+  modelicaData.status = -1;
   modelicaData.arr[0] = -1;
   modelicaData.arr[1] = -1;
   modelicaData.arr[2] = -2;
-  modelicaData.number = -1;
-  modelicaData.command = -1;
+
   strcpy(modelicaData.message, "This is feak Modelica data\0");
 
-  //
+  ffdData.t = 0;
+  ffdData.status = -1;
   ffdData.number[0] = -1;
   ffdData.number[1] = -1;
   ffdData.number[2] = -2;
-  ffdData.command = -1;
-  strcpy(ffdData.message, "This is feak FFD data\0");
 
+  strcpy(ffdData.message, "This is feak FFD data\0");
 
   /*---------------------------------------------------------------------------
   | Create named file mapping objects for specified files
@@ -149,7 +150,6 @@ int main( )
   // Copy a block of memory from szMsg to pBuf
   CopyMemory((PVOID)ffdDataBuf, &ffdData, sizeof(ffdSharedData));
 
-
   getchar();
   UnmapViewOfFile(ffdDataBuf);
   UnmapViewOfFile(modelicaDataBuf);
@@ -158,3 +158,5 @@ int main( )
 
   return 0;
 }
+
+
