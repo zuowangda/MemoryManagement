@@ -7,17 +7,15 @@
 #include <conio.h>
 #include <tchar.h>
 
-
 #define BUF_SIZE 256
-#define N_COMMAND 1
 
 #define BUF_FFD_SIZE (sizeof(ffdSharedData))
 #define BUF_MODELICA_SIZE (sizeof(ModelicaSharedData))
-#define BUF_COMMAND_SIZE (N_COMMAND*sizeof(INT))
+
 
 TCHAR ffdDataName[] = TEXT("FFDDataMappingObject");
 TCHAR modelicaDataName[] = TEXT("ModelicaDataMappingObject");
-TCHAR commandDataName[] = TEXT("commandMappingObject");
+
 
 typedef struct {
   float t;
@@ -132,25 +130,16 @@ int main( )
 
   // Initialize the memory
   CopyMemory((PVOID)modelicaDataBuf, &modelicaData, sizeof(modelicaData));
-  //printf("Copied Modelica data to buf\n");
-  //printf("Modelica data\n");
-  //printf("number=%f\n", modelicaData.number);
-  //printf("arr[0]=%f, arr[1]=%f, arr[2]=%f\n", modelicaData.arr[0], modelicaData.arr[1], modelicaData.arr[2]);
-  //printf("command=%d\n",modelicaData.command);
-  //printf("message=%s\n",modelicaData.message); 
-
-  //printf("\nbuffed data:\n");
-  //printf("number=%f\n", modelicaDataBuf->number);
-  //printf("arr[0]=%f, arr[1]=%f, arr[2]=%f\n", modelicaDataBuf->arr[0], modelicaDataBuf->arr[1], modelicaDataBuf->arr[2]);
-  //printf("command=%d\n",modelicaDataBuf->command);
-  //printf("message=%s\n",modelicaDataBuf->message); 
 
   printf("Created memory for data\n");
   // Initialize the memory
   // Copy a block of memory from szMsg to pBuf
   CopyMemory((PVOID)ffdDataBuf, &ffdData, sizeof(ffdSharedData));
 
-  getchar();
+  // If no termination command, keep running
+  while(modelicaDataBuf->status != -2)
+    Sleep(10);
+
   UnmapViewOfFile(ffdDataBuf);
   UnmapViewOfFile(modelicaDataBuf);
   CloseHandle(ffdDataMapFile);
